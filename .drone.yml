@@ -3,6 +3,10 @@ kind: pipeline
 type: docker
 name: default
 
+trigger:
+  event:
+  - tag
+
 steps:
 - name: build docker armbian builder
   image: docker
@@ -16,7 +20,8 @@ steps:
   when:
     event: tag
 
-- name: build armbian yunohost lime2 image
+- &BUILD_ARMBIAN_TASK
+  name: build armbian yunohost lime2 image
   image: armbian-builder
   pull: never
   # Needed for loop devices
@@ -33,22 +38,31 @@ steps:
     path: /tmp/dev
   environment:
     YNH_BUILDER_BRANCH: stable
-    YNH_BUILDER_INSTALL_CUBE_DEPS: no
+    YNH_BUILDER_INSTALL_INTERNETCUBE: no
+    BOARD: lime2
+    IMAGE_NAME_PREFIX: yunohost
   commands:
-  - env | grep '^YNH_BUILDER'  > userpatches/overlay/image_env.sh
-  - ./compile.sh yunohost BOARD="lime2"
-  - cat userpatches/overlay/yunohost_version
+  - env | grep '^YNH_BUILDER' > userpatches/overlay/image_env.sh
+  - ./compile.sh yunohost BOARD="$BOARD"
+  - mv --no-clobber --no-target-directory output/images/Armbian_*.img 'output/images/'"$IMAGE_NAME_PREFIX"'_'`cat userpatches/overlay/yunohost_version`'_'"$DRONE_TAG"'_'"$BOARD"'.img'
   when:
     event: tag
 
-- name: rename and compress images
+- << : *BUILD_ARMBIAN_TASK
+  name: build armbian internetcube lime2 image
+  environment:
+    YNH_BUILDER_BRANCH: stable
+    YNH_BUILDER_INSTALL_INTERNETCUBE: yes
+    BOARD: lime2
+    IMAGE_NAME_PREFIX: internetcube
+
+- name: compress images
   image: armbian-builder
   pull: never
   volumes:
   - name: output
     path: /drone/src/output
   commands:
-  - rename.ul -v '.img' "_y`cat userpatches/overlay/yunohost_version`.img" output/images/*.img
   - gzip -v output/images/*.img
   when:
     event: tag
