@@ -27,7 +27,7 @@ source /tmp/overlay/internetcube/yunocube.sh
 ulimit -c 0
 
 if [[ $BOARD == "lime2" ]]
-
+then
     # Freeze armbian/kernel version
     # because current version break dhcp on eth0
     # (since around ~November 2020 ?)
