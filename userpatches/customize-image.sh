@@ -31,11 +31,11 @@ then
     # (since around ~November 2020 ?)
 
     apt install -y --allow-downgrades \
-        armbian-firmware=21.08.3 \
-        armbian-bsp-cli-lime2=21.08.3 \
-        linux-dtb-current-sunxi=21.08.2 \
-        linux-image-current-sunxi=21.08.2 \
-        linux-u-boot-lime2-current=21.08.1 \
+        armbian-firmware=22.02.2 \
+        armbian-bsp-cli-lime2=22.02.1 \
+        linux-dtb-current-sunxi=22.02.1 \
+        linux-image-current-sunxi=22.02.1 \
+        linux-u-boot-lime2-current=22.02.1 \
     || exit 1
 
     apt-mark hold armbian-firmware
