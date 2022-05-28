@@ -67,6 +67,22 @@ steps:
     IMAGE_NAME_PREFIX: internetcube
 
 - << : *BUILD_ARMBIAN_TASK
+  name: build armbian yunohost rpi image
+  environment:
+    YNH_BUILDER_BRANCH: testing
+    YNH_BUILDER_INSTALL_INTERNETCUBE: no
+    BOARD: rpi4b
+    IMAGE_NAME_PREFIX: yunohost
+
+- << : *BUILD_ARMBIAN_TASK
+  name: build armbian internetcube rpi image
+  environment:
+    YNH_BUILDER_BRANCH: testing
+    YNH_BUILDER_INSTALL_INTERNETCUBE: yes
+    BOARD: rpi4b
+    IMAGE_NAME_PREFIX: internetcube
+
+- << : *BUILD_ARMBIAN_TASK
   name: build armbian yunohost lime2 image
   environment:
     YNH_BUILDER_BRANCH: testing
