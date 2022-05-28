@@ -29,7 +29,7 @@ steps:
     event: tag
 
 - &BUILD_ARMBIAN_TASK
-  name: build armbian yunohost lime image
+  name: build armbian yunohost orangepipcplus image
   image: armbian-builder
   pull: never
   # Needed for loop devices
@@ -47,7 +47,7 @@ steps:
   environment:
     YNH_BUILDER_BRANCH: testing
     YNH_BUILDER_INSTALL_INTERNETCUBE: no
-    BOARD: lime
+    BOARD: orangepipcplus
     IMAGE_NAME_PREFIX: yunohost
   commands:
   - "[ -f  'output/images/'\"$IMAGE_NAME_PREFIX\"'_'*'_'\"$DRONE_TAG\"'_'\"$BOARD\"'.img'* ] && exit"
@@ -59,11 +59,11 @@ steps:
     event: tag
 
 - << : *BUILD_ARMBIAN_TASK
-  name: build armbian internetcube lime image
+  name: build armbian internetcube orangepipcplus image
   environment:
     YNH_BUILDER_BRANCH: testing
     YNH_BUILDER_INSTALL_INTERNETCUBE: yes
-    BOARD: lime
+    BOARD: orangepipcplus
     IMAGE_NAME_PREFIX: internetcube
 
 - << : *BUILD_ARMBIAN_TASK
@@ -83,19 +83,19 @@ steps:
     IMAGE_NAME_PREFIX: internetcube
 
 - << : *BUILD_ARMBIAN_TASK
-  name: build armbian yunohost orangepipcplus image
+  name: build armbian yunohost lime image
   environment:
     YNH_BUILDER_BRANCH: testing
     YNH_BUILDER_INSTALL_INTERNETCUBE: no
-    BOARD: orangepipcplus
+    BOARD: lime
     IMAGE_NAME_PREFIX: yunohost
 
 - << : *BUILD_ARMBIAN_TASK
-  name: build armbian internetcube orangepipcplus image
+  name: build armbian internetcube lime image
   environment:
     YNH_BUILDER_BRANCH: testing
     YNH_BUILDER_INSTALL_INTERNETCUBE: yes
-    BOARD: orangepipcplus
+    BOARD: lime
     IMAGE_NAME_PREFIX: internetcube
 
 - name: publish pre-release on github
