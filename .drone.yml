@@ -14,6 +14,7 @@ steps:
 - name: git clone submodules
   image: alpine/git
   commands:
+  - git config --global --add safe.directory /drone/src
   - git submodule update --init --recursive
 
 - name: build docker armbian builder
