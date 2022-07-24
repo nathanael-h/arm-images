@@ -8,6 +8,7 @@ cups
 dbus-x11
 dictionaries-common
 dmz-cursor-theme
+eject
 evolution-data-server
 evolution-data-server-common
 fonts-freefont-ttf
@@ -157,10 +158,12 @@ libxtst6
 libxxf86dga1
 libyelp0
 lightdm
+lightdm-settings
 mutter
 mutter-common
 nautilus
 nautilus-data
+network-manager-openvpn-gnome
 openprinting-ppds
 p11-kit
 p11-kit-modules

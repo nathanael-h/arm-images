@@ -3,18 +3,34 @@ ARCH=arm64
 KERNEL_IMAGE_TYPE=Image
 OFFSET=16
 BOOTSCRIPT='boot-rockchip64.cmd:boot.cmd'
-BOOTENV_FILE='rockchip.txt'
+BOOTENV_FILE='rockchip64.txt'
 UBOOT_TARGET_MAP=";;idbloader.bin uboot.img trust.bin"
 BOOTDELAY=0
 OVERLAY_PREFIX='rockchip'
 SERIALCON=${SERIALCON:=$([ $BRANCH == "legacy" ] && echo "ttyFIQ0:1500000" || echo "ttyS2:1500000")}
 GOVERNOR="ondemand"
 ATFPATCHDIR='atf-rockchip64'
-BOOTBRANCH="tag:v2021.07"
+BOOTBRANCH="tag:v2022.04"
 BOOTPATCHDIR="u-boot-rockchip64"
 PACKAGE_LIST_FAMILY="ethtool"
 
 RKBIN_DIR="$SRC/cache/sources/rkbin-tools"
+
+# Common variables:
+# BOOT_SCENARIO - determines which tpl (ddrbin), spl and ATF combination to use
+#
+# Different boot scenario can arrange:
+# * Phase 1: DDR initialization (proprietary rockchip ddrbin or u-boot TPL)
+# * Phase 2: Initial system and clock initialization (proprietary rockchip miniload or u-boot SPL)
+# * Phase 3: Arm Trusted Firmware (proprietary rockchip or mainline opensource)
+# * Phase 4: u-boot proper is always the mainline one
+#
+# Available options for BOOT_SCENARIO are:
+# - only-blobs: proprietary rockchip ddrbin, miniloader and ATF
+# - spl-blobs: proprietary rockchip ddrin and ATF, but uses mainline u-boot SPL in place of rockchip miniloader
+# - tpl-spl-blob: uses mainline u-boot TPL and SPL with proprietary rockchip ATF blob
+# - tpl-blob-atf-mainline: proprietary rockchip ddrbin + mainline u-boot SPL + mainline ATF
+# - blobless: mainline u-boot TPL + mainline u-boot SPL + mainline ATF
 
 #BOOT_SOC=`expr $BOOTCONFIG : '.*\(rk[[:digit:]]\+.*\)_.*'`
 BOOT_SOC=${BOOT_SOC:=$(expr $BOOTCONFIG : '.*\(rk[[:digit:]]\+.*\)_.*')}
@@ -42,41 +58,41 @@ fi
 if [[ $BOOT_SOC == rk3328 ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=only-blobs}"
-	DDR_BLOB='rk33/rk3328_ddr_333MHz_v1.16.bin'
+	DDR_BLOB="${DDR_BLOB:=rk33/rk3328_ddr_333MHz_v1.16.bin}"
 	MINILOADER_BLOB='rk33/rk322xh_miniloader_v2.50.bin'
 	BL31_BLOB='rk33/rk322xh_bl31_v1.44.elf'
 
 elif [[ $BOOT_SOC == rk3399 ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=only-blobs}"
-	DDR_BLOB='rk33/rk3399_ddr_933MHz_v1.25.bin'
+	DDR_BLOB="${DDR_BLOB:=rk33/rk3399_ddr_933MHz_v1.25.bin}"
 	MINILOADER_BLOB='rk33/rk3399_miniloader_v1.26.bin'
 	BL31_BLOB='rk33/rk3399_bl31_v1.35.elf'
 
 elif [[ $BOOT_SOC == rk3399pro ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=only-blobs}"
-	DDR_BLOB='rk33/rk3399pro_npu_ddr_933MHz_v1.02.bin'
+	DDR_BLOB="${DDR_BLOB:=rk33/rk3399pro_npu_ddr_933MHz_v1.02.bin}"
 	MINILOADER_BLOB='rk33/rk3399pro_miniloader_v1.26.bin'
 	BL31_BLOB='rk33/rk3399pro_bl31_v1.35.elf'
 
 elif [[ $BOOT_SOC == rk3566 ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=spl-blobs}"
-	DDR_BLOB='rk35/rk3566_ddr_1056MHz_v1.10.bin'
+	DDR_BLOB="${DDR_BLOB:=rk35/rk3566_ddr_1056MHz_v1.10.bin}"
 	BL31_BLOB='rk35/rk3568_bl31_v1.29.elf'
 
 elif [[ $BOOT_SOC == rk3568 ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=spl-blobs}"
-	DDR_BLOB='rk35/rk3568_ddr_1560MHz_v1.10.bin'
+	DDR_BLOB="${DDR_BLOB:=rk35/rk3568_ddr_1560MHz_v1.10.bin}"
 	BL31_BLOB='rk35/rk3568_bl31_v1.28.elf'
 
 elif [[ $BOARD == rockpi-s ]]; then
 
 	BOOT_SCENARIO="${BOOT_SCENARIO:=only-blobs}"
 	BOOT_SOC=rk3308
-	DDR_BLOB='rk33/rk3308_ddr_589MHz_uart2_m1_v1.30.bin'
+	DDR_BLOB="${DDR_BLOB:=rk33/rk3308_ddr_589MHz_uart2_m1_v1.30.bin}"
 	MINILOADER_BLOB='rk33/rk3308_miniloader_v1.22.bin'
 	BL31_BLOB='rk33/rk3308_bl31_v2.22.elf'
 
@@ -92,7 +108,6 @@ case $BRANCH in
 current)
 
 	KERNELBRANCH="branch:linux-5.15.y"
-	KERNELBRANCH="tag:v5.15.35"
 	KERNELPATCHDIR='rockchip64-'$BRANCH
 	LINUXFAMILY=rockchip64
 	LINUXCONFIG='linux-rockchip64-'$BRANCH
@@ -110,16 +125,18 @@ edge)
 esac
 
 prepare_boot_configuration() {
-	if [[ $BOOT_SCENARIO == "blobless" ]]; then
+	if [[ $BOOT_SCENARIO == "blobless" || $BOOT_SCENARIO == "tpl-blob-atf-mainline" ]]; then
 
-		UBOOT_TARGET_MAP="BL31=bl31.bin idbloader.img u-boot.itb;;idbloader.img u-boot.itb"
+		UBOOT_TARGET_MAP="BL31=bl31.elf idbloader.img u-boot.itb;;idbloader.img u-boot.itb"
 		ATFSOURCE='https://github.com/ARM-software/arm-trusted-firmware'
 		ATF_COMPILER='aarch64-linux-gnu-'
 		ATFDIR='arm-trusted-firmware'
-		ATFBRANCH='tag:v2.5'
+		ATFBRANCH='tag:v2.6'
 		ATF_USE_GCC='> 6.3'
-		ATF_TARGET_MAP="M0_CROSS_COMPILE=arm-linux-gnueabi- PLAT=$BOOT_SOC bl31;;build/$BOOT_SOC/release/bl31/bl31.elf:bl31.bin"
-		ATF_TOOLCHAIN2="arm-linux-gnueabi-:> 5.0"
+		ATF_TARGET_MAP="M0_CROSS_COMPILE=arm-linux-gnueabi- PLAT=$BOOT_SOC bl31;;build/$BOOT_SOC/release/bl31/bl31.elf:bl31.elf"
+		ATF_TOOLCHAIN2="arm-linux-gnueabi-:< 10.0"
+
+		[[ $BOOT_SCENARIO == "tpl-blob-atf-mainline" ]] && UBOOT_TARGET_MAP="BL31=bl31.elf idbloader.img u-boot.itb;;idbloader.img u-boot.itb"
 
 	elif [[ $BOOT_SCENARIO == "tpl-spl-blob" ]]; then
 
@@ -143,7 +160,11 @@ prepare_boot_configuration() {
 
 	if [[ $BOOT_SUPPORT_SPI == yes ]]; then
 
-		UBOOT_TARGET_MAP="BL31=$RKBIN_DIR/$BL31_BLOB tpl/u-boot-tpl.bin spl/u-boot-spl.bin u-boot.itb ${UBOOT_TARGET_MAP} rkspi_loader.img"
+		if [[ $BOARD != "rock-3a" ]]; then
+			UBOOT_TARGET_MAP="BL31=$RKBIN_DIR/$BL31_BLOB tpl/u-boot-tpl.bin spl/u-boot-spl.bin u-boot.itb ${UBOOT_TARGET_MAP} rkspi_loader.img"
+		else
+			UBOOT_TARGET_MAP="${UBOOT_TARGET_MAP} rkspi_loader.img"
+		fi
 
 	fi
 }
@@ -152,7 +173,7 @@ uboot_custom_postprocess() {
 
 	if [[ $BOOT_SCENARIO == "blobless" || $BOOT_SCENARIO == "tpl-spl-blob" ]]; then
 		:
-	elif [[ $BOOT_SCENARIO == "spl-blobs" ]]; then
+	elif [[ $BOOT_SCENARIO == "spl-blobs" || $BOOT_SCENARIO == "tpl-blob-atf-mainline" ]]; then
 
 		tools/mkimage -n $BOOT_SOC -T rksd -d $RKBIN_DIR/$DDR_BLOB:spl/u-boot-spl.bin idbloader.img
 
@@ -170,10 +191,24 @@ uboot_custom_postprocess() {
 	fi
 
 	if [[ $BOOT_SUPPORT_SPI == yes ]]; then
-		tools/mkimage -n $BOOT_SOC -T rkspi -d tpl/u-boot-tpl.bin:spl/u-boot-spl.bin rkspi_tpl_spl.img
-		dd if=/dev/zero of=rkspi_loader.img count=8128 status=none
-		dd if=rkspi_tpl_spl.img of=rkspi_loader.img conv=notrunc status=none
-		dd if=u-boot.itb of=rkspi_loader.img seek=768 conv=notrunc status=none
+		if [[ $BOARD == "rock-3a" ]]; then
+			dd if=/dev/zero of=rkspi_loader.img bs=1M count=0 seek=16
+			/sbin/parted -s rkspi_loader.img mklabel gpt
+			/sbin/parted -s rkspi_loader.img unit s mkpart idbloader 64 7167
+			/sbin/parted -s rkspi_loader.img unit s mkpart vnvm 7168 7679
+			/sbin/parted -s rkspi_loader.img unit s mkpart reserved_space 7680 8063
+			/sbin/parted -s rkspi_loader.img unit s mkpart reserved1 8064 8127
+			/sbin/parted -s rkspi_loader.img unit s mkpart uboot_env 8128 8191
+			/sbin/parted -s rkspi_loader.img unit s mkpart reserved2 8192 16383
+			/sbin/parted -s rkspi_loader.img unit s mkpart uboot 16384 32734
+			dd if=idbloader.img of=rkspi_loader.img seek=64 conv=notrunc
+			dd if=u-boot.itb of=rkspi_loader.img seek=16384 conv=notrunc
+		else
+			tools/mkimage -n $BOOT_SOC -T rkspi -d tpl/u-boot-tpl.bin:spl/u-boot-spl.bin rkspi_tpl_spl.img
+			dd if=/dev/zero of=rkspi_loader.img count=8128 status=none
+			dd if=rkspi_tpl_spl.img of=rkspi_loader.img conv=notrunc status=none
+			dd if=u-boot.itb of=rkspi_loader.img seek=768 conv=notrunc status=none
+		fi
 	fi
 }
 
@@ -249,6 +284,12 @@ family_tweaks() {
 		# install and enable Bluetooth
 		chroot $SDCARD /bin/bash -c "apt-get -y -qq install rfkill bluetooth bluez bluez-tools"
 		chroot $SDCARD /bin/bash -c "systemctl --no-reload enable rk3399-bluetooth.service >/dev/null 2>&1"
+
+	elif [[ -f $SDCARD/lib/systemd/system/sprd-bluetooth.service ]]; then
+
+		# install and enable Bluetooth
+		chroot $SDCARD /bin/bash -c "apt-get -y -qq install rfkill bluetooth bluez bluez-tools"
+		chroot $SDCARD /bin/bash -c "systemctl --no-reload enable sprd-bluetooth.service >/dev/null 2>&1"
 
 	fi
 
@@ -345,6 +386,15 @@ family_tweaks_bsp() {
 		fi
 	fi
 
+	if [[ $BOARD == orangepi4-lts ]]; then
+		
+		# Bluetooth on orangepi 4 LTS board is handled by a Spreadtrum (sprd) chip and requires
+		# a custom hciattach_opi binary, plus a systemd service to run it at boot time
+		install -m 755 $SRC/packages/bsp/rk3399/hciattach_opi $destination/usr/bin
+		cp $SRC/packages/bsp/rk3399/sprd-bluetooth.service $destination/lib/systemd/system/
+
+	fi
+
 	if [[ $BOARD == nanopim4* ]]; then
 
 		# Fan support
@@ -388,6 +438,14 @@ family_tweaks_bsp() {
 		install -m 755 $SRC/packages/bsp/helios64/helios64-ups.sh $destination/usr/bin/helios64-ups.sh
 
 	fi
+
+	if [[ $BOARD == rk3318-box ]]; then
+
+                # Optional board dtbo selection script
+                mkdir -p $destination/usr/local/bin
+                install -m 755 $SRC/packages/bsp/rk3318/rk3318-config $destination/usr/sbin
+
+        fi
 
 	if [[ $BOARD == pinebook-pro ]]; then
 
