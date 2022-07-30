@@ -15,7 +15,7 @@ steps:
   image: alpine/git
   commands:
   - git config --global --add safe.directory /drone/src
-  - git submodule update --init --recursive
+  - git submodule update --remote --recursive
 
 - name: build docker armbian builder
   image: docker
