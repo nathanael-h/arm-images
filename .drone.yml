@@ -59,13 +59,13 @@ steps:
   when:
     event: tag
 
-- << : *BUILD_ARMBIAN_TASK
-  name: build armbian internetcube orangepipcplus image
-  environment:
-    YNH_BUILDER_BRANCH: testing
-    YNH_BUILDER_INSTALL_INTERNETCUBE: yes
-    BOARD: orangepipcplus
-    IMAGE_NAME_PREFIX: internetcube
+#- << : *BUILD_ARMBIAN_TASK
+#  name: build armbian internetcube orangepipcplus image
+#  environment:
+#    YNH_BUILDER_BRANCH: testing
+#    YNH_BUILDER_INSTALL_INTERNETCUBE: yes
+#    BOARD: orangepipcplus
+#    IMAGE_NAME_PREFIX: internetcube
 
 - << : *BUILD_ARMBIAN_TASK
   name: build armbian yunohost lime2 image
@@ -75,13 +75,13 @@ steps:
     BOARD: lime2
     IMAGE_NAME_PREFIX: yunohost
 
-- << : *BUILD_ARMBIAN_TASK
-  name: build armbian internetcube lime2 image
-  environment:
-    YNH_BUILDER_BRANCH: testing
-    YNH_BUILDER_INSTALL_INTERNETCUBE: yes
-    BOARD: lime2
-    IMAGE_NAME_PREFIX: internetcube
+#- << : *BUILD_ARMBIAN_TASK
+#  name: build armbian internetcube lime2 image
+#  environment:
+#    YNH_BUILDER_BRANCH: testing
+#    YNH_BUILDER_INSTALL_INTERNETCUBE: yes
+#    BOARD: lime2
+#    IMAGE_NAME_PREFIX: internetcube
 
 - << : *BUILD_ARMBIAN_TASK
   name: build armbian yunohost lime image
@@ -91,13 +91,13 @@ steps:
     BOARD: lime
     IMAGE_NAME_PREFIX: yunohost
 
-- << : *BUILD_ARMBIAN_TASK
-  name: build armbian internetcube lime image
-  environment:
-    YNH_BUILDER_BRANCH: testing
-    YNH_BUILDER_INSTALL_INTERNETCUBE: yes
-    BOARD: lime
-    IMAGE_NAME_PREFIX: internetcube
+#- << : *BUILD_ARMBIAN_TASK
+#  name: build armbian internetcube lime image
+#  environment:
+#    YNH_BUILDER_BRANCH: testing
+#    YNH_BUILDER_INSTALL_INTERNETCUBE: yes
+#    BOARD: lime
+#    IMAGE_NAME_PREFIX: internetcube
 
 - name: publish pre-release on github
   image: plugins/github-release:1
