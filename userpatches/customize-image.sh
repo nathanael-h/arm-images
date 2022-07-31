@@ -106,3 +106,6 @@ apt-cache policy yunohost | grep -Po 'Installed: \K.+' > /tmp/overlay/yunohost_v
 
 # Clean stuff
 apt clean
+
+# We don't want the damn network-manager :/
+apt-get purge -y -q network-manager 
